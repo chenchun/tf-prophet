@@ -159,21 +159,17 @@ if __name__ == '__main__':
   x = []
   y = []
   tf.logging.set_verbosity(tf.logging.INFO)
-  with open('mixer_server.log') as f:
+  with open('data/cpu_usage.csv') as f:
     content = f.read().splitlines()
-  base = 0
   for line in content:
     parts = line.split(',')
-    time = int(datetime.strptime(parts[0], '%Y-%m-%d %H:%M:%S').timestamp())
-    if base == 0:
-      base = time
-    x.append((time-base)//60)
+    x.append(int(parts[0]))
     y.append(int(parts[1]))
   # x = np.array(range(1000))
   # noise = np.random.uniform(-0.2, 0.2, 1000)
   # y = np.sin(np.pi * x / 50 ) + np.cos(np.pi * x / 50) + np.sin(np.pi * x / 25) + noise
-  print("x %s" % x)
-  print("y %s" % y)
+  # print("x %s" % x)
+  # print("y %s" % y)
   # exit(1)
   data = {
       tf.contrib.timeseries.TrainEvalFeatures.TIMES: x,
@@ -186,7 +182,7 @@ if __name__ == '__main__':
       reader, batch_size=4, window_size=100)
 
   estimator = ts_estimators.TimeSeriesRegressor(
-      model=_LSTMModel(num_features=1, num_units=128),
+      model=_LSTMModel(num_features=1, num_units=256),
       optimizer=tf.train.AdamOptimizer(0.001))
 
   estimator.train(input_fn=train_input_fn, steps=2000)
@@ -195,7 +191,7 @@ if __name__ == '__main__':
   # Predict starting after the evaluation
   (predictions,) = tuple(estimator.predict(
       input_fn=tf.contrib.timeseries.predict_continuation_input_fn(
-          evaluation, steps=200)))
+          evaluation, steps=1440)))
 
   observed_times = evaluation["times"][0]
   observed = evaluation["observed"][0, :, :]
